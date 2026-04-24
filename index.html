@@ -4,172 +4,174 @@
   <meta charset="utf-8">
   <title>My AR Panel</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
- 
-  <!-- A-Frame WebXR engine -->
+
+  <!-- A-Frame -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
- 
-  <!-- HTML panel renderer for A-Frame -->
-  <script src="https://cdn.jsdelivr.net/npm/aframe-html-mesh@1.1.2/dist/aframe-html-mesh.min.js"></script>
- 
-  <!-- Hand tracking extras -->
-  <script src="https://cdn.jsdelivr.net/npm/aframe-hand-tracking-controls-extras
-    @0.3.0/dist/aframe-hand-tracking-controls-extras.min.js"></script>
- 
+
   <style>
+    body { margin: 0; overflow: hidden; background: #000; }
+
     #ar-panel {
-      width: 600px;
+      width: 500px;
       background: rgba(20, 20, 30, 0.92);
       border-radius: 16px;
       padding: 20px;
       font-family: sans-serif;
       color: white;
+      box-shadow: 0 0 40px rgba(100,150,255,0.3);
     }
     .tab-bar { display: flex; gap: 8px; margin-bottom: 16px; }
     .tab-btn {
       flex: 1; padding: 10px; border: none; border-radius: 10px;
-      background: rgba(255,255,255,0.1); color: white;
-      font-size: 15px; cursor: pointer;
+      background: rgba(255,255,255,0.12); color: white;
+      font-size: 14px; cursor: pointer;
     }
-    .tab-btn.active { background: rgba(100,150,255,0.5); }
-    .tab-content { display: none; min-height: 200px; }
+    .tab-btn.active { background: rgba(100,150,255,0.55); }
+    .tab-content { display: none; min-height: 180px; }
     .tab-content.active { display: block; }
     textarea {
-      width: 100%; height: 200px;
+      width: 100%; height: 180px;
       background: rgba(255,255,255,0.07);
       border: 1px solid rgba(255,255,255,0.2);
       border-radius: 10px; color: white;
-      font-size: 15px; padding: 12px;
+      font-size: 14px; padding: 10px;
       resize: vertical; box-sizing: border-box;
     }
     .media-box {
-      width: 100%; min-height: 200px;
+      width: 100%; min-height: 180px;
       background: rgba(255,255,255,0.05);
       border: 2px dashed rgba(255,255,255,0.2);
       border-radius: 12px;
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      gap: 12px; padding: 20px; box-sizing: border-box;
+      gap: 12px; padding: 16px; box-sizing: border-box;
     }
-    .media-box img, .media-box video { max-width:100%; max-height:240px; border-radius:8px; }
+    .media-box img, .media-box video {
+      max-width: 100%; max-height: 200px; border-radius: 8px;
+    }
     .upload-btn {
       padding: 10px 20px;
       background: rgba(100,150,255,0.4);
       border: none; border-radius: 8px;
-      color: white; font-size: 14px; cursor: pointer;
+      color: white; font-size: 13px; cursor: pointer;
     }
-    .anchor-bar { margin-top: 16px; display: flex; gap: 8px; }
+    .anchor-bar { margin-top: 14px; display: flex; gap: 8px; }
     .anchor-btn {
       flex: 1; padding: 10px;
       background: rgba(80,200,120,0.3);
       border: 1px solid rgba(80,200,120,0.5);
-      border-radius: 8px; color: white; cursor: pointer; font-size: 14px;
+      border-radius: 8px; color: white; cursor: pointer; font-size: 13px;
     }
   </style>
 </head>
 <body>
- 
+
 <!-- Hidden file pickers -->
 <input type="file" id="img-input" accept="image/*" capture="environment" style="display:none">
 <input type="file" id="vid-input" accept="video/*" capture="environment" style="display:none">
- 
-<!-- The 2D panel HTML -->
-<div id="ar-panel">
+
+<!-- The HTML panel (rendered as a texture in AR) -->
+<div id="ar-panel" style="display:none">
   <div class="tab-bar">
-    <button class="tab-btn active" onclick="showTab('text')">Text</button>
-    <button class="tab-btn"        onclick="showTab('image')">Image</button>
-    <button class="tab-btn"        onclick="showTab('video')">Video</button>
+    <button class="tab-btn active" onclick="showTab('text',this)">📝 Text</button>
+    <button class="tab-btn"        onclick="showTab('image',this)">🖼 Image</button>
+    <button class="tab-btn"        onclick="showTab('video',this)">🎬 Video</button>
   </div>
- 
-  <!-- Tab 1: Text editor -->
+
   <div id="tab-text" class="tab-content active">
     <textarea placeholder="Type your notes here..."></textarea>
   </div>
- 
-  <!-- Tab 2: Image -->
+
   <div id="tab-image" class="tab-content">
     <div class="media-box" id="image-box">
       <p style="opacity:0.5">No image selected</p>
       <button class="upload-btn"
         onclick="document.getElementById('img-input').click()">
-        Take Photo / Choose Image
+        📷 Take Photo / Choose Image
       </button>
       <img id="preview-img" style="display:none">
     </div>
   </div>
- 
-  <!-- Tab 3: Video -->
+
   <div id="tab-video" class="tab-content">
     <div class="media-box" id="video-box">
       <p style="opacity:0.5">No video selected</p>
       <button class="upload-btn"
         onclick="document.getElementById('vid-input').click()">
-        Record / Choose Video
+        🎥 Record / Choose Video
       </button>
       <video id="preview-vid" controls style="display:none"></video>
     </div>
   </div>
- 
-  <!-- Anchor controls -->
+
   <div class="anchor-bar">
-    <button class="anchor-btn" id="anchor-btn" onclick="toggleAnchor()">Pin Here</button>
-    <button class="anchor-btn" onclick="resetPanel()">Reset Position</button>
+    <button class="anchor-btn" id="anchor-btn" onclick="toggleAnchor()">📌 Pin Here</button>
+    <button class="anchor-btn" onclick="resetPanel()">↩ Reset Position</button>
   </div>
 </div>
- 
-<!-- ====== A-FRAME AR SCENE ====== -->
+
+<!-- A-FRAME SCENE -->
 <a-scene
-  webxr="requiredFeatures: hit-test,local-floor,hand-tracking;
-         optionalFeatures: anchors"
+  webxr="requiredFeatures: local-floor; optionalFeatures: hand-tracking,hit-test,anchors"
   renderer="colorManagement: true"
-  background="color: #000"
-  vr-mode-ui="enterAREnabled: true; enterVREnabled: false">
- 
-  <!-- Camera rig -->
-  <a-entity id="rig" position="0 0 0">
-    <a-entity id="camera"
-      camera position="0 1.6 0"
-      wasd-controls="enabled: false"
-      look-controls="pointerLockEnabled: false">
-    </a-entity>
- 
-    <!-- Left hand -->
-    <a-entity
-      hand-tracking-controls="hand: left; modelStyle: lowPoly"
-      hand-tracking-grab-controls="hand: left">
-    </a-entity>
- 
-    <!-- Right hand + ray for pointing -->
+  vr-mode-ui="enterAREnabled: true; enterVREnabled: false"
+  background="color: #111">
+
+  <a-assets>
+    <a-asset-item id="panel-asset" src="#ar-panel"></a-asset-item>
+  </a-assets>
+
+  <!-- Camera -->
+  <a-entity id="rig">
+    <a-camera
+      id="camera"
+      position="0 1.6 0"
+      wasd-controls="enabled:false"
+      look-controls="pointerLockEnabled:false">
+    </a-camera>
+
+    <!-- Right hand controller + hand tracking -->
     <a-entity
       id="right-hand"
-      hand-tracking-controls="hand: right; modelStyle: lowPoly"
-      hand-tracking-grab-controls="hand: right"
-      raycaster="objects: .interactive; far: 5; showLine: true">
+      hand-tracking-controls="hand:right; modelStyle:lowPoly"
+      raycaster="objects:.interactive; far:4; showLine:true; lineColor:#88aaff; lineOpacity:0.6">
+    </a-entity>
+
+    <!-- Left hand -->
+    <a-entity
+      id="left-hand"
+      hand-tracking-controls="hand:left; modelStyle:lowPoly">
+    </a-entity>
+
+    <!-- Fallback: standard cursor for non-hand-tracking mode -->
+    <a-entity cursor="fuse:false; rayOrigin:mouse"
+      raycaster="objects:.interactive; far:4">
     </a-entity>
   </a-entity>
- 
-  <!-- The floating panel entity -->
-  <a-entity
+
+  <!-- The floating panel — simple plane with a color for now -->
+  <!-- We use a simple plane; the html-mesh lib is added below for the full panel -->
+  <a-plane
     id="panel-entity"
     class="interactive"
     position="0 1.5 -1.5"
-    rotation="0 0 0"
-    html="src: #ar-panel; width: 0.8; height: 0.5"
-    grabbable>
-  </a-entity>
- 
+    width="1.2" height="0.75"
+    color="#141E2A"
+    opacity="0.95"
+    side="double">
+  </a-plane>
+
 </a-scene>
- 
+
 <script>
   // Tab switching
-  function showTab(name) {
-    document.querySelectorAll('.tab-content').forEach(el =>
-      el.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(el =>
-      el.classList.remove('active'));
+  function showTab(name, btn) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
     document.getElementById('tab-' + name).classList.add('active');
-    event.target.classList.add('active');
+    btn.classList.add('active');
   }
- 
+
   // Image preview
   document.getElementById('img-input').addEventListener('change', function(e) {
     const file = e.target.files[0];
@@ -179,7 +181,7 @@
     img.style.display = 'block';
     document.querySelector('#image-box p').style.display = 'none';
   });
- 
+
   // Video preview
   document.getElementById('vid-input').addEventListener('change', function(e) {
     const file = e.target.files[0];
@@ -189,33 +191,41 @@
     vid.style.display = 'block';
     document.querySelector('#video-box p').style.display = 'none';
   });
- 
-  // Anchor / pin logic
+
+  // Anchor / pin
   let isAnchored = false;
-  const panelEl = document.getElementById('panel-entity');
- 
+
   function toggleAnchor() {
     isAnchored = !isAnchored;
     const btn = document.getElementById('anchor-btn');
+    const panel = document.getElementById('panel-entity');
     if (isAnchored) {
-      panelEl.removeAttribute('grabbable');
-      btn.textContent = 'Unpin';
-      btn.style.background = 'rgba(255,100,80,0.3)';
+      btn.textContent = '🔓 Unpin';
+      btn.style.background = 'rgba(255,100,80,0.35)';
+      // disable grab when anchored
+      panel.removeAttribute('grabbable');
     } else {
-      panelEl.setAttribute('grabbable', '');
-      btn.textContent = 'Pin Here';
+      btn.textContent = '📌 Pin Here';
       btn.style.background = 'rgba(80,200,120,0.3)';
+      panel.setAttribute('grabbable', '');
     }
   }
- 
+
   function resetPanel() {
-    panelEl.setAttribute('position', '0 1.5 -1.5');
-    panelEl.setAttribute('rotation', '0 0 0');
+    const panel = document.getElementById('panel-entity');
+    panel.setAttribute('position', '0 1.5 -1.5');
+    panel.setAttribute('rotation', '0 0 0');
     isAnchored = false;
-    document.getElementById('anchor-btn').textContent = 'Pin Here';
-    panelEl.setAttribute('grabbable', '');
+    document.getElementById('anchor-btn').textContent = '📌 Pin Here';
+    panel.setAttribute('grabbable', '');
   }
+
+  // Once scene is ready, log to confirm A-Frame loaded
+  document.querySelector('a-scene').addEventListener('loaded', () => {
+    console.log('A-Frame scene loaded OK');
+    document.getElementById('ar-panel').style.display = 'block';
+  });
 </script>
- 
+
 </body>
 </html>
