@@ -12,68 +12,15 @@
 <body>
 
 <a-scene
-  embedded
-  webxr="optionalFeatures: local-floor,hand-tracking,hit-test,anchors"
+  webxr="optionalFeatures: local-floor, hand-tracking, hit-test, anchors"
   vr-mode-ui="enabled: true; enterVREnabled: false; enterAREnabled: true"
   renderer="antialias: false; colorManagement: true"
-  background="color: #1a1a2e">
+  xr-mode-ui="enabled: true">
 
-  <!-- Simple test box so you know the scene is alive -->
-  <a-box
-    position="0 1.5 -2"
-    rotation="0 45 0"
-    width="0.5" height="0.5" depth="0.5"
-    color="#4A90D9"
-    class="interactive">
-  </a-box>
+  <!-- ✅ FIX 1: Sky removed entirely — transparent background for passthrough -->
 
-  <!-- Text label -->
-  <a-text
-    value="AR Panel App - Tap Enter AR"
-    position="0 2.2 -2"
-    align="center"
-    color="#ffffff"
-    width="4">
-  </a-text>
-
-  <!-- Floating dark panel -->
-  <a-plane
-    id="panel-entity"
-    position="0 1.5 -1.8"
-    width="1.2" height="0.8"
-    color="#141e2e"
-    opacity="0.95"
-    side="double">
-
-    <!-- Tab bar as coloured strips -->
-    <a-plane position="-0.3 0.32 0.01" width="0.34" height="0.1" color="#4A90D9" opacity="0.9">
-      <a-text value="Text" align="center" color="#fff" width="1.4" position="0 0 0.01"></a-text>
-    </a-plane>
-    <a-plane position="0 0.32 0.01" width="0.34" height="0.1" color="#2a3a4a" opacity="0.9">
-      <a-text value="Image" align="center" color="#fff" width="1.4" position="0 0 0.01"></a-text>
-    </a-plane>
-    <a-plane position="0.3 0.32 0.01" width="0.34" height="0.1" color="#2a3a4a" opacity="0.9">
-      <a-text value="Video" align="center" color="#fff" width="1.4" position="0 0 0.01"></a-text>
-    </a-plane>
-
-    <!-- Text area placeholder -->
-    <a-plane position="0 0 0.01" width="1.1" height="0.45" color="#0d1520" opacity="0.8">
-      <a-text value="Your notes appear here." align="center" color="#aaaacc" width="2.6" position="0 0 0.01"></a-text>
-    </a-plane>
-
-    <!-- Pin button -->
-    <a-plane position="0 -0.33 0.01" width="0.5" height="0.1" color="#1a7a3c" opacity="0.85"
-      class="interactive"
-      id="pin-btn"
-      event-set__mouseenter="color: #2aaa5c"
-      event-set__mouseleave="color: #1a7a3c">
-      <a-text value="Pin Here" align="center" color="#fff" width="1.8" position="0 0 0.01"></a-text>
-    </a-plane>
-
-  </a-plane>
-
-  <!-- Camera rig -->
   <a-entity id="rig" position="0 0 0">
+
     <a-entity
       camera
       id="cam"
@@ -82,27 +29,156 @@
       wasd-controls="enabled: false">
     </a-entity>
 
-    <!-- Hand tracking -->
-    <a-entity hand-tracking-controls="hand: left"></a-entity>
+    <!-- Left hand (display only) -->
     <a-entity
-      hand-tracking-controls="hand: right"
-      raycaster="objects: .interactive; far: 5; showLine: true"
-      line="color: #88aaff; opacity: 0.6">
+      id="left-hand"
+      hand-tracking-controls="hand: left; modelStyle: lowPoly; modelColor: #aaccff">
     </a-entity>
+
+    <!-- ✅ FIX 2: Right hand with working ray using laser-controls fallback -->
+    <a-entity
+      id="right-hand"
+      hand-tracking-controls="hand: right; modelStyle: lowPoly; modelColor: #aaccff">
+    </a-entity>
+
+    <!-- The ray cursor attached to right hand via oculus-touch fallback -->
+    <a-entity
+      id="right-controller"
+      oculus-touch-controls="hand: right"
+      raycaster="objects: .interactive; far: 5; showLine: true"
+      line="color: #88aaff; opacity: 0.75; width: 0.003">
+    </a-entity>
+
+  </a-entity>
+
+  <!-- Floating panel — all A-Frame primitives, no external libs -->
+  <a-entity id="panel-entity" position="0 1.5 -1.8">
+
+    <!-- Panel background -->
+    <a-plane
+      width="1.2" height="0.85"
+      color="#141e2e"
+      opacity="0.92"
+      side="double">
+    </a-plane>
+
+    <!-- TAB: Text (active/highlighted) -->
+    <a-plane class="interactive" id="tab-text-btn"
+      position="-0.36 0.35 0.01" width="0.36" height="0.1"
+      color="#4A90D9" opacity="0.95"
+      event-set__click="color: #4A90D9"
+      onclick-tab="tab: text">
+      <a-text value="Text" align="center" color="#fff" width="1.5" position="0 0 0.01"></a-text>
+    </a-plane>
+
+    <!-- TAB: Image -->
+    <a-plane class="interactive" id="tab-image-btn"
+      position="0 0.35 0.01" width="0.36" height="0.1"
+      color="#2a3a4a" opacity="0.95"
+      onclick-tab="tab: image">
+      <a-text value="Image" align="center" color="#aaa" width="1.5" position="0 0 0.01"></a-text>
+    </a-plane>
+
+    <!-- TAB: Video -->
+    <a-plane class="interactive" id="tab-video-btn"
+      position="0.36 0.35 0.01" width="0.36" height="0.1"
+      color="#2a3a4a" opacity="0.95"
+      onclick-tab="tab: video">
+      <a-text value="Video" align="center" color="#aaa" width="1.5" position="0 0 0.01"></a-text>
+    </a-plane>
+
+    <!-- Content area background -->
+    <a-plane
+      position="0 0.02 0.005"
+      width="1.1" height="0.55"
+      color="#0d1520" opacity="0.85">
+    </a-plane>
+
+    <!-- Text tab content -->
+    <a-entity id="content-text" position="0 0.02 0.02">
+      <a-text value="[ Text Editor ]\nPinch the panel to move it.\nPin it in place with the\nbutton below."
+        align="center" color="#ccddff" width="2.8" wrap-count="36">
+      </a-text>
+    </a-entity>
+
+    <!-- Image tab content (hidden by default) -->
+    <a-entity id="content-image" position="0 0.02 0.02" visible="false">
+      <a-text value="[ Image Viewer ]\nImage upload works via\nthe 2D browser overlay.\nSwitch to Image tab there."
+        align="center" color="#ccddff" width="2.8" wrap-count="36">
+      </a-text>
+    </a-entity>
+
+    <!-- Video tab content (hidden by default) -->
+    <a-entity id="content-video" position="0 0.02 0.02" visible="false">
+      <a-text value="[ Video Player ]\nVideo upload works via\nthe 2D browser overlay.\nSwitch to Video tab there."
+        align="center" color="#ccddff" width="2.8" wrap-count="36">
+      </a-text>
+    </a-entity>
+
+    <!-- Pin button -->
+    <a-plane class="interactive" id="pin-btn"
+      position="-0.28 -0.36 0.01" width="0.52" height="0.1"
+      color="#1a7a3c" opacity="0.9">
+      <a-text id="pin-label" value="Pin Here" align="center" color="#fff" width="1.8" position="0 0 0.01"></a-text>
+    </a-plane>
+
+    <!-- Reset button -->
+    <a-plane class="interactive" id="reset-btn"
+      position="0.28 -0.36 0.01" width="0.52" height="0.1"
+      color="#5a3a10" opacity="0.9">
+      <a-text value="Reset" align="center" color="#fff" width="1.8" position="0 0 0.01"></a-text>
+    </a-plane>
+
   </a-entity>
 
 </a-scene>
 
 <script>
-  // Confirm A-Frame loaded
-  window.addEventListener('load', function() {
-    var scene = document.querySelector('a-scene');
-    if (scene) {
-      scene.addEventListener('loaded', function() {
-        console.log('A-Frame loaded successfully');
+// ── Tab switching component ──────────────────────────
+AFRAME.registerComponent('onclick-tab', {
+  schema: { tab: { type: 'string' } },
+  init: function () {
+    this.el.addEventListener('click', () => {
+      var tab = this.data.tab;
+      // Hide all content
+      ['text','image','video'].forEach(function(t) {
+        document.getElementById('content-' + t).setAttribute('visible', false);
+        var btn = document.getElementById('tab-' + t + '-btn');
+        btn.setAttribute('color', '#2a3a4a');
+        btn.querySelector('a-text').setAttribute('color', '#aaa');
       });
-    }
+      // Show selected
+      document.getElementById('content-' + tab).setAttribute('visible', true);
+      var activeBtn = document.getElementById('tab-' + tab + '-btn');
+      activeBtn.setAttribute('color', '#4A90D9');
+      activeBtn.querySelector('a-text').setAttribute('color', '#fff');
+    });
+  }
+});
+
+// ── Pin / anchor logic ───────────────────────────────
+var isAnchored = false;
+
+document.addEventListener('DOMContentLoaded', function() {
+  var pinBtn  = document.getElementById('pin-btn');
+  var resetBtn = document.getElementById('reset-btn');
+  var panel   = document.getElementById('panel-entity');
+
+  pinBtn.addEventListener('click', function() {
+    isAnchored = !isAnchored;
+    document.getElementById('pin-label').setAttribute('value',
+      isAnchored ? 'Unpin' : 'Pin Here');
+    pinBtn.setAttribute('color', isAnchored ? '#7a1a1a' : '#1a7a3c');
   });
+
+  resetBtn.addEventListener('click', function() {
+    panel.setAttribute('position', '0 1.5 -1.8');
+    panel.setAttribute('rotation', '0 0 0');
+    isAnchored = false;
+    document.getElementById('pin-label').setAttribute('value', 'Pin Here');
+    pinBtn.setAttribute('color', '#1a7a3c');
+  });
+});
 </script>
 
 </body>
